@@ -143,7 +143,12 @@ class FlutterPaytabsBridge {
   }
 
   static Future<String> handleImagePath(String path) async {
-    var bytes = File(path).readAsBytesSync();
+    var bytes;
+    if (File(path).existsSync()) {
+      bytes = File(path).readAsBytesSync().buffer.asByteData();
+    } else {
+      bytes = await rootBundle.load(path);
+    }
     String dir = (await getApplicationDocumentsDirectory()).path;
     var imageName = path.split("/").last;
     String logoPath = '$dir/$imageName';
@@ -151,8 +156,9 @@ class FlutterPaytabsBridge {
     return logoPath;
   }
 
-  static Future<void> writeToFile(Uint8List data, String path) {
-    return new File(path).writeAsBytes(data);
+  static Future<void> writeToFile(ByteData data, String path) {
+    final buffer = data.buffer;
+    return new File(path).writeAsBytes(buffer.asUint8List(data.offsetInBytes, data.lengthInBytes));
   }
 
   static Future<dynamic> startAlternativePaymentMethod(
